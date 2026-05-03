@@ -1,0 +1,7 @@
+.env 
+mi_base_vectorial/ 
+__pycache__/ 
+*.pyc 
+.venv/ 
+venv/ 
+.ipynb_checkpoints/ 
