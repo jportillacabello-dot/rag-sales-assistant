@@ -114,7 +114,7 @@ PATRÓN 3 — "quién es el mejor cliente / quién compró más":
 SELECT Customer_Name, SUM(Sales) as Total_Gastado, COUNT(*) as Compras
 FROM ventas GROUP BY Customer_Name ORDER BY Total_Gastado DESC LIMIT 10;
 
-PATRÓN 4 — "cómo aumentar ventas / vender más / crecer":
+PATRÓN 4 — "cómo aumentar ventas / vender más / crecer/que recomiendas":
 SELECT Category, Region, SUM(Sales) as Total_Ventas, COUNT(*) as Ordenes
 FROM ventas GROUP BY Category, Region ORDER BY Total_Ventas DESC LIMIT 12;
 
