@@ -132,6 +132,9 @@ REGLAS ESTRICTAS:
 - Para nombres usa LIKE '%texto%' con LOWER()
 - Responde SOLO con el SQL, sin explicaciones, sin markdown
 
+
+
+
 PREGUNTA: {pregunta}
 SQL:"""
 
@@ -203,6 +206,12 @@ def interpretar_resultados(pregunta: str, sql: str, datos: str) -> str:
     - Español neutro, profesional pero conversacional
     - Máximo 250 palabras
     - Sin emojis salvo en bullets si aporta claridad
+
+    REGLAS DE FORMATO (importantes):
+    - Usa siempre espacios entre palabras y números
+    - NUNCA pegues números a palabras (mal: '$100en' bien: '$100 en')
+    - Separa cada bullet con un salto de línea
+    - No uses markdown raro, solo texto limpio
 
     ---
     PREGUNTA: {pregunta}
