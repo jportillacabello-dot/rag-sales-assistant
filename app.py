@@ -95,20 +95,46 @@ def es_pregunta_de_datos(pregunta: str) -> bool:
 
 
 def generar_sql(pregunta: str) -> str:
-    """Convierte una pregunta en SQL válido."""
-    prompt = (
-        f"Eres un experto en SQL.\n"
-        f"Tabla 'ventas' con este esquema:\n{ESQUEMA}\n\n"
-        f"Convierte la pregunta en SQL válido para sqlite3.\n"
-        f"REGLAS:\n"
-        f"- Usa SOLO las columnas del esquema\n"
-        f"- Usa LIKE '%texto%' para búsquedas parciales\n"
-        f"- Usa LOWER() para ignorar mayúsculas\n"
-        f"- Para análisis general: GROUP BY Category, Region o State\n"
-        f"- Responde SOLO el SQL, sin explicaciones, sin markdown\n\n"
-        f"PREGUNTA: {pregunta}\n"
-        f"SQL:"
-    )
+    prompt = f"""Eres un experto en SQL para análisis de ventas retail.
+
+TABLA: ventas
+{ESQUEMA}
+
+Convierte la pregunta en SQL válido para sqlite3 siguiendo estos PATRONES:
+
+PATRÓN 1 — "dónde / qué región / qué estado vendió más":
+SELECT Region, SUM(Sales) as Total_Ventas, COUNT(*) as Ordenes
+FROM ventas GROUP BY Region ORDER BY Total_Ventas DESC;
+
+PATRÓN 2 — "qué categoría / producto vendió más":
+SELECT Category, SUM(Sales) as Total_Ventas
+FROM ventas GROUP BY Category ORDER BY Total_Ventas DESC;
+
+PATRÓN 3 — "quién es el mejor cliente / quién compró más":
+SELECT Customer_Name, SUM(Sales) as Total_Gastado, COUNT(*) as Compras
+FROM ventas GROUP BY Customer_Name ORDER BY Total_Gastado DESC LIMIT 10;
+
+PATRÓN 4 — "cómo aumentar ventas / vender más / crecer":
+SELECT Category, Region, SUM(Sales) as Total_Ventas, COUNT(*) as Ordenes
+FROM ventas GROUP BY Category, Region ORDER BY Total_Ventas DESC LIMIT 12;
+
+PATRÓN 5 — pregunta sobre un cliente específico:
+SELECT Customer_Name, Product_Name, Category, Sales
+FROM ventas WHERE LOWER(Customer_Name) LIKE '%nombre%' LIMIT 50;
+
+PATRÓN 6 — pregunta sobre un estado/región/categoría específica:
+SELECT * FROM ventas WHERE LOWER(State) LIKE '%texas%' LIMIT 50;
+
+REGLAS ESTRICTAS:
+- Usa SOLO las columnas del esquema
+- NUNCA agrupes por más de 2 dimensiones
+- SIEMPRE usa LIMIT cuando agrupes (máximo 20 filas)
+- Para nombres usa LIKE '%texto%' con LOWER()
+- Responde SOLO con el SQL, sin explicaciones, sin markdown
+
+PREGUNTA: {pregunta}
+SQL:"""
+
     sql = llamar_llm(prompt).strip()
     return sql.replace("```sql", "").replace("```", "").strip()
 
