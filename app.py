@@ -14,7 +14,7 @@ import sqlite3
 load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-df = pd.read_csv(r"C:\Users\JHONATAN\Escritorio\IA_PROJECT\train.csv")
+df = pd.read_csv("train.csv")
 
 
 # ════════════════════════════════════════════════════════
