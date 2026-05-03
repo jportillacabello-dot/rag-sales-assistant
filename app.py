@@ -113,16 +113,24 @@ def generar_sql(pregunta: str) -> str:
     return sql.replace("```sql", "").replace("```", "").strip()
 
 
+
+
+
+
 def ejecutar_sql(sql: str) -> str:
-    """Ejecuta el SQL y devuelve los resultados como texto."""
     conn = get_db_connection()
     try:
         resultado = pd.read_sql_query(sql, conn)
         if resultado.empty:
             return "VACÍO"
+        # limitar a 50 filas máximo para no exceder tokens
+        if len(resultado) > 50:
+            resultado = resultado.head(50)
         return resultado.to_string(index=False)
     except Exception as e:
         return f"ERROR_SQL: {e}"
+
+
 
 
 def buscar_semantico(pregunta: str) -> str:
