@@ -1,6 +1,7 @@
-streamlit 
-groq 
-chromadb 
-sentence-transformers 
-python-dotenv 
-pandas 
+streamlit==1.40.0
+groq==0.13.0
+chromadb==0.5.23
+sentence-transformers==3.3.1
+python-dotenv==1.0.1
+pandas==2.2.3
+protobuf==4.25.5
