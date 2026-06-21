@@ -54,9 +54,9 @@ Tabla: ventas
 Columnas:
 - Row_ID (int)
 - Order_ID, Customer_ID, Product_ID (texto)
-- Order_Date, Ship_Date (texto, formato 'MM/DD/YYYY', ej: '08/11/2017')
+- Order_Date, Ship_Date (texto, formato 'DD/MM/YYYY', ej: '08/11/2017')
   → Para filtrar por año usa: substr(Order_Date, 7, 4) = '2017'
-  → Para filtrar por mes usa: substr(Order_Date, 1, 2) = '08'
+  → Para filtrar por mes usa: substr(Order_Date, 4, 2) = '08'
 - Ship_Mode: 'Second Class', 'Standard Class', 'First Class', 'Same Day'
 - Customer_Name (texto)
 - Segment: 'Consumer', 'Corporate', 'Home Office'
@@ -131,6 +131,24 @@ FROM ventas WHERE LOWER(Customer_Name) LIKE '%nombre%' LIMIT 50;
 
 PATRÓN 6 — pregunta sobre un estado/región/categoría específica:
 SELECT * FROM ventas WHERE LOWER(State) LIKE '%texas%' LIMIT 50;
+
+# PATRÓN 7 — "mejor mes / peor mes / ventas por mes / tendencia mensual":
+# SELECT substr(Order_Date, 7, 4) as Anio,
+#        substr(Order_Date, 1, 2) as Mes,
+#        SUM(Sales) as Total_Ventas,
+#        COUNT(*) as Ordenes
+# FROM ventas
+# GROUP BY Anio, Mes
+# ORDER BY Total_Ventas DESC
+# LIMIT 24;
+
+PATRÓN 8 — "ventas por año / comparar años / tendencia anual":
+SELECT substr(Order_Date, 7, 4) as Anio,
+       SUM(Sales) as Total_Ventas,
+       COUNT(*) as Ordenes
+FROM ventas
+GROUP BY Anio
+ORDER BY Anio ASC;
 
 REGLAS ESTRICTAS:
 - Usa SOLO las columnas del esquema
