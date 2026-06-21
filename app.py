@@ -1,3 +1,4 @@
+#%%
 import streamlit as st
 from groq import Groq
 import chromadb
@@ -52,13 +53,17 @@ ESQUEMA = """
 Tabla: ventas
 Columnas:
 - Row_ID (int)
-- Order_ID, Order_Date, Ship_Date (texto)
+- Order_ID, Customer_ID, Product_ID (texto)
+- Order_Date, Ship_Date (texto, formato 'MM/DD/YYYY', ej: '08/11/2017')
+  → Para filtrar por año usa: substr(Order_Date, 7, 4) = '2017'
+  → Para filtrar por mes usa: substr(Order_Date, 1, 2) = '08'
 - Ship_Mode: 'Second Class', 'Standard Class', 'First Class', 'Same Day'
-- Customer_ID, Customer_Name (texto)
+- Customer_Name (texto)
 - Segment: 'Consumer', 'Corporate', 'Home Office'
-- Country, City, State, Postal_Code (texto)
+- Country, City, State (texto)
+- Postal_Code (número)
 - Region: 'South', 'West', 'Central', 'East'
-- Product_ID, Product_Name (texto)
+- Product_Name (texto)
 - Category: 'Furniture', 'Office Supplies', 'Technology'
 - Sub_Category (texto)
 - Sales (float): monto de la venta en dólares
@@ -69,13 +74,15 @@ Columnas:
 # 4. FUNCIONES AUXILIARES (cada una hace UNA cosa)
 # ════════════════════════════════════════════════════════
 
-def llamar_llm(prompt: str, system: str = None) -> str:
+def llamar_llm(prompt: str, system: str = None, historial: list = None) -> str:
     """Llama a LLaMA 3 con un prompt simple."""
     messages = []
     if system:
         messages.append({"role": "system", "content": system})
+    if historial:
+        messages.extend(historial)
     messages.append({"role": "user", "content": prompt})
-    
+
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=messages
@@ -94,7 +101,7 @@ def es_pregunta_de_datos(pregunta: str) -> bool:
     return "DATOS" in clasificacion.upper()
 
 
-def generar_sql(pregunta: str) -> str:
+def generar_sql(pregunta: str, historial: list = None) -> str:
     prompt = f"""Eres un experto en SQL para análisis de ventas retail.
 
 TABLA: ventas
@@ -138,7 +145,7 @@ REGLAS ESTRICTAS:
 PREGUNTA: {pregunta}
 SQL:"""
 
-    sql = llamar_llm(prompt).strip()
+    sql = llamar_llm(prompt, historial=historial).strip()
     return sql.replace("```sql", "").replace("```", "").strip()
 
 
@@ -166,7 +173,10 @@ def buscar_semantico(pregunta: str) -> str:
     """Fallback: busca con ChromaDB cuando el SQL no encuentra nada."""
     coleccion = get_chroma_collection()
     resultados = coleccion.query(query_texts=[pregunta], n_results=5)
-    return "\n".join([f"- {f}" for f in resultados["documents"][0]])
+    docs = resultados["documents"][0] if resultados["documents"] else []
+    if not docs:
+        return "No se encontraron documentos relevantes en la base vectorial."
+    return "\n".join([f"- {f}" for f in docs])
 
 
 def interpretar_resultados(pregunta: str, sql: str, datos: str) -> str:
@@ -231,17 +241,18 @@ def interpretar_resultados(pregunta: str, sql: str, datos: str) -> str:
 # 5. ORQUESTADOR PRINCIPAL
 # ════════════════════════════════════════════════════════
 
-def rag_responder(pregunta: str) -> str:
+def rag_responder(pregunta: str, historial: list = None) -> str:
     try:
         # si es chat, responder directo
         if not es_pregunta_de_datos(pregunta):
             return llamar_llm(
                 pregunta,
-                system="Eres un asistente de análisis de ventas retail amigable. Responde en español de forma breve y natural."
+                system="Eres un asistente de análisis de ventas retail amigable. Responde en español de forma breve y natural.",
+                historial=historial
             )
 
         # si es de datos: SQL → ejecutar → interpretar
-        sql = generar_sql(pregunta)
+        sql = generar_sql(pregunta, historial=historial)
         datos = ejecutar_sql(sql)
 
         # si SQL no devuelve nada o falla, usar búsqueda semántica
@@ -281,6 +292,10 @@ if pregunta:
 
     with st.chat_message("assistant"):
         with st.spinner("Analizando datos..."):
-            respuesta = rag_responder(pregunta)
+            historial = [
+                {"role": msg["rol"], "content": msg["contenido"]}
+                for msg in st.session_state.mensajes[-6:]
+            ]
+            respuesta = rag_responder(pregunta, historial=historial)
         st.write(respuesta)
     st.session_state.mensajes.append({"rol": "assistant", "contenido": respuesta})
